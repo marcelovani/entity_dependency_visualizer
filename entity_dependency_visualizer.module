@@ -121,7 +121,16 @@ function entity_dependency_visualizer_get_list($entities, &$list = array()) {
   $dependencies = new EntityDependencyIteratorIterator($iterator);
 
   foreach ($dependencies as $entity) {
-    if (isset($entity->uid)) {
+    $type = NULL;
+    $identifier = NULL;
+    $bundle = NULL;
+    $table = NULL;
+    $data = array (
+      'field' => '',
+      'value' => 0,
+    );
+
+    if (isset($entity->uid) && isset($entity->name) && isset($entity->mail) && isset($entity->pass)) {
       $type = 'user';
       $identifier = $entity->uid;
       $bundle = 'user';
@@ -183,7 +192,8 @@ function entity_dependency_visualizer_get_list($entities, &$list = array()) {
         'data' => $data,
       );
 
-      $sub_dependencies = field_entity_dependencies($entity, $type);
+      $sub_dependencies = module_invoke_all('entity_dependencies', $entity, $type);
+      drupal_alter('entity_dependencies', $sub_dependencies, $entity, $type);
       if (!empty($sub_dependencies)) {
          entity_dependency_visualizer_get_list($sub_dependencies, $list);
       }
