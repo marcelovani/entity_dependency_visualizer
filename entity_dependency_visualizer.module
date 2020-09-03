@@ -1,0 +1,284 @@
+<?php
+/**
+ * @file Contains hooks and logic for the visualizer.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function entity_dependency_visualizer_menu() {
+
+  $items['node/%node/entity_dependency_visualizer'] = array(
+    'title' => 'Entity Graph',
+    'page callback' => 'entity_dependency_visualizer_callback',
+    'page arguments' => array('node', 1),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 50,
+  );
+  $items['user/%user/entity_dependency_visualizer'] = array(
+    'title' => 'View Graph',
+    'page callback' => 'entity_dependency_visualizer_callback',
+    'page arguments' => array('user', 1),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 50,
+  );
+  $items['taxonomy/term/%taxonomy_term/entity_dependency_visualizer'] = array(
+    'title' => 'View Graph',
+    'page callback' => 'entity_dependency_visualizer_callback',
+    'page arguments' => array('taxonomy_term', 2, 'term'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 50,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function entity_dependency_visualizer_admin_paths() {
+  $paths = array(
+    'node/*/entity_dependency_visualizer' => TRUE,
+    'node/*/entity_dependency_visualizer/*' => TRUE,
+    'user/*/entity_dependency_visualizer' => TRUE,
+    'user/*/entity_dependency_visualizer/*' => TRUE,
+    'taxonomy/term/*/entity_dependency_visualizer' => TRUE,
+    'taxonomy/term/*/entity_dependency_visualizer/*' => TRUE,
+  );
+
+  return $paths;
+}
+
+/**
+ * Callback for menu items.
+ */
+function entity_dependency_visualizer_callback($type, $object, $name = NULL) {
+
+  switch ($type) {
+    case 'node':
+      if (!user_access('edit own ' . $object->type . ' content') && !user_access('edit any ' . $object->type . ' content')) {
+        drupal_access_denied();
+      }
+      $id = $object->nid;
+      break;
+
+    case 'taxonomy_term':
+      if (!user_access('edit terms in ' . $object->vid)) {
+        drupal_access_denied();
+      }
+      $id = $object->tid;
+      break;
+
+    case 'user':
+      if (!user_access('access user profiles')) {
+        drupal_access_denied();
+      }
+      $id = $object->uid;
+      break;
+
+    default:
+      drupal_set_message(t('Entity type %t is not supported by Entity Dependency Visualizer.', array('%t' => $type)), 'error');
+      return;
+  }
+
+  $entities = array(
+    array(
+      'type' => $type,
+      'id' => $id
+    )
+  );
+
+  $list =  entity_dependency_visualizer_get_list($entities);
+  $graph_ojb = entity_dependency_visualizer_get_graphviz($list);
+
+  $settings_js = array(
+    'entity_dependency_visualizer' => array(
+      'data' => $graph_ojb,
+    ),
+  );
+  drupal_add_js($settings_js, 'setting');
+  drupal_add_js('http://webgraphviz.com/viz.js', 'external');
+  drupal_add_js(drupal_get_path('module', 'entity_dependency_visualizer') . '/js/entity_dependency_visualizer.js');
+
+  return '<div id="graphviz_svg_div"></div>';
+}
+
+/**
+ * Process dependencies.
+ *
+ * @param $dependencies array
+ *   List of dependencies.
+ * @return array
+ *   The normalized array of dependencies.
+ * @todo
+ *   Batch this to support large entities.
+ */
+function entity_dependency_visualizer_get_list($entities, &$list = array()) {
+  $iterator = new DeployIterator($entities);
+  $dependencies = new EntityDependencyIteratorIterator($iterator);
+
+  foreach ($dependencies as $entity) {
+    if (isset($entity->uid)) {
+      $type = 'user';
+      $identifier = $entity->uid;
+      $bundle = 'user';
+      $table = 'users';
+      $data = array (
+        'field' => '',
+        'value' => 0,
+      );
+    }
+    else if (isset($entity->nid)) {
+      $type = 'node';
+      $identifier = $entity->nid;
+      $bundle = $entity->type;
+      $table = 'node';
+      $data = array (
+        'field' => 'vuuid',
+        'value' => $entity->vuuid,
+      );
+    }
+    else if (isset($entity->tid)) {
+      $type = 'taxonomy_term';
+      $identifier = $entity->tid;
+      $bundle = $entity->vocabulary_machine_name;
+      $table = 'taxonomy_term_data';
+      $data = array (
+        'field' => '',
+        'value' => 0,
+      );
+    }
+    else if ($entity instanceof FieldCollectionItemEntity) {
+      $type = 'field_collection_item';
+      $identifier = $entity->item_id;
+      $bundle = $entity->field_name;
+      $table = 'field_collection_item';
+      $data = array (
+        'field' => 'revision_id',
+        'value' => $entity->revision_id,
+      );
+    }
+    else {
+      drupal_set_message(t('Entity Visualizer error: Unknown entity <pre>%e</pre>', array('%e' => var_export($entity, TRUE))), 'error');
+      continue;
+    }
+
+    if (empty($entity->uuid)) {
+      watchdog('entity_dependency_visualizer', t('Entity is missing UUID <pre>%e</pre>'), array('%e' => var_export($entity, TRUE)), WATCHDOG_ERROR);
+      continue;
+    }
+
+    // Add to list and dedupe at the same time to remove circular dependencies.
+    if (!isset($list[$entity->uuid])) {
+      $list[$entity->uuid] = array(
+        'id' => $identifier,
+        'type' => $type,
+        'bundle' => $bundle,
+        'table' => $table,
+        'uuid' => $entity->uuid,
+        'parent' => $entity->__metadata['cause'],
+        'data' => $data,
+      );
+
+      $sub_dependencies = field_entity_dependencies($entity, $type);
+      if (!empty($sub_dependencies)) {
+         entity_dependency_visualizer_get_list($sub_dependencies, $list);
+      }
+    }
+  }
+
+  return $list;
+}
+
+/**
+ * Gets the Graphviz object, see Graphviz http://www.webgraphviz.com
+ *
+ * @param $list
+ *    The list of objects
+ * @return string
+ *    The Graphviz object.
+ */
+function entity_dependency_visualizer_get_graphviz($list) {
+  // @todo Make this configurable.
+  $definitions = array(
+    'size' => '30,30',
+    'graph' => array (
+      'style' => 'filled',
+      'fontname' => 'Arial',
+      'fontsize' => '40',
+      'style' => 'bold',
+      'label' => t('Dependencies tree'),
+      'ssize' => '30,60',
+    ),
+    'node' => array (
+      'style' => 'filled',
+      'fontname' => 'Verdana',
+      'shape' => 'circle',
+      'size' => '8,8',
+    ),
+  );
+
+  $graph_obj = 'digraph sdsu {';
+  foreach ($definitions as $key => $definition) {
+    if (is_array($definition)) {
+      $graph_obj .=  "\t" . $key . ' [';
+      foreach ($definition as $dk => $item) {
+        $graph_obj .= $dk . '="' . $item . '"';
+      }
+      $graph_obj .= '];' . PHP_EOL;
+    }
+    else {
+      $graph_obj .= $key . '="' . $definition . '";' . PHP_EOL;
+    }
+  }
+
+  $i = 0;
+  foreach ($list as $uuid => $item) {
+    $i++;
+    $parent_uuid = '';
+    if ($parts = explode('/', $item['parent'])) {
+      if (isset($parts[1])) {
+        $parent_uuid = $parts[1];
+      }
+    }
+    $from = str_replace('-', '\n', $parent_uuid);
+    $to = str_replace('-', '\n', $uuid);
+
+    $label = 'order: #' . $i . '\n';
+    $label .= 'field: ' . $item['bundle'] . '\n';
+    $label .= $item['type'] . '/' . $item['id'];
+    if (!empty($item['data']['field'])) {
+      $label .= '\n' . $item['data']['field'] . ': ' . $item['data']['value'];
+    }
+
+    switch ($item['type']) {
+      case 'node':
+        $color = 'crimson'; // @todo make colors customizable.
+        if ($item['bundle'] == 'manual_page') { // @todo use alter hook to allow changing colors
+          $color = 'coral';
+        }
+        break;
+
+      case 'taxonomy_term':
+        $color = 'greenyellow';
+        break;
+
+      case 'field_collection_item':
+        $color = 'deepskyblue';
+        break;
+
+      default:
+        $color = 'gray81';
+    }
+    $graph_obj .= '"' . $to . '" [color="' . $color . '"];' . PHP_EOL;
+
+    $graph_obj .= '"' . $from . '" -> "' . $to . '" [ label = "' . $label . '" ];' . PHP_EOL;
+  }
+
+  $graph_obj .= '}';
+
+  return $graph_obj;
+}

@@ -1,0 +1,5 @@
+name = "Entity Dependency Visualizer"
+description = "Displays a graphic output of the dependencies of entities"
+core = "7.x"
+dependencies[] = entity_dependency
+dependencies[] = uuid
