@@ -192,6 +192,10 @@ function entity_dependency_visualizer_get_list($entities, $max_time, &$list = ar
         'value' => $entity->revision_id,
       );
     }
+    else if ($entity == new stdClass()) {
+      // Ignore blank entities that were possibly removed in hook_deploy_deploy_entity_alter().
+      continue;
+    }
     else {
       drupal_set_message(t('Entity Visualizer error: Unknown entity <pre>%e</pre>', array('%e' => var_export($entity, TRUE))), 'error');
       continue;
