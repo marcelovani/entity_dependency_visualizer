@@ -91,12 +91,18 @@ function entity_dependency_visualizer_callback($type, $object, $name = NULL) {
     )
   );
 
-  $list =  entity_dependency_visualizer_get_list($entities);
-  $graph_ojb = entity_dependency_visualizer_get_graphviz($list);
+  // Limit execution time. This is useful to detect circular dependencies and avoid killing the webservers.
+  // @todo Admin UI to configure it.
+  $max_time = time() + (int) variable_get('entity_dependency_visualizer_max_time', 20);
+  $list =  entity_dependency_visualizer_get_list($entities, $max_time);
+  if (time() > $max_time) {
+    drupal_set_message(t('Maximum execution time reached before collecting all dependencies. This might be caused by circular dependencies.'), 'warning');
+  }
 
+  // Add scripts.
   $settings_js = array(
     'entity_dependency_visualizer' => array(
-      'data' => $graph_ojb,
+      'data' => entity_dependency_visualizer_get_graphviz($list),
     ),
   );
   drupal_add_js($settings_js, 'setting');
@@ -111,16 +117,22 @@ function entity_dependency_visualizer_callback($type, $object, $name = NULL) {
  *
  * @param $dependencies array
  *   List of dependencies.
+ * @paeram $list array
+ *   Used only to store recursive values.
  * @return array
  *   The normalized array of dependencies.
  * @todo
  *   Batch this to support large entities.
  */
-function entity_dependency_visualizer_get_list($entities, &$list = array()) {
+function entity_dependency_visualizer_get_list($entities, $max_time, &$list = array()) {
   $iterator = new DeployIterator($entities);
   $dependencies = new EntityDependencyIteratorIterator($iterator);
 
   foreach ($dependencies as $entity) {
+    if (time() > $max_time) {
+      return $list;
+    }
+
     $type = NULL;
     $identifier = NULL;
     $bundle = NULL;
@@ -138,6 +150,16 @@ function entity_dependency_visualizer_get_list($entities, &$list = array()) {
       $data = array (
         'field' => '',
         'value' => 0,
+      );
+    }
+    else if (isset($entity->fid) && isset($entity->filename) && isset($entity->filemime) && isset($entity->uri)) {
+      $type = 'file';
+      $identifier = $entity->fid;
+      $bundle = 'file';
+      $table = 'file_managed';
+      $data = array (
+        'field' => 'timestamp',
+        'value' => $entity->timestamp,
       );
     }
     else if (isset($entity->nid)) {
@@ -195,7 +217,7 @@ function entity_dependency_visualizer_get_list($entities, &$list = array()) {
       $sub_dependencies = module_invoke_all('entity_dependencies', $entity, $type);
       drupal_alter('entity_dependencies', $sub_dependencies, $entity, $type);
       if (!empty($sub_dependencies)) {
-         entity_dependency_visualizer_get_list($sub_dependencies, $list);
+         entity_dependency_visualizer_get_list($sub_dependencies, $max_time, $list);
       }
     }
   }
@@ -280,6 +302,10 @@ function entity_dependency_visualizer_get_graphviz($list) {
         $color = 'deepskyblue';
         break;
 
+      case 'file':
+        $color = 'gold';
+        break;
+
       default:
         $color = 'gray81';
     }
@@ -292,3 +318,4 @@ function entity_dependency_visualizer_get_graphviz($list) {
 
   return $graph_obj;
 }
+
