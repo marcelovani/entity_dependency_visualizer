@@ -91,15 +91,8 @@ function entity_dependency_visualizer_callback($type, $object, $name = NULL) {
     )
   );
 
-  // Limit execution time. This is useful to detect circular dependencies and avoid killing the webservers.
-  // @todo Admin UI to configure it.
-  $max_time = time() + (int) variable_get('entity_dependency_visualizer_max_time', 20);
-  $list =  entity_dependency_visualizer_get_list($entities, $max_time);
-  if (time() > $max_time) {
-    drupal_set_message(t('Maximum execution time reached before collecting all dependencies. This might be caused by circular dependencies.'), 'warning');
-  }
-
-  $data = entity_dependency_visualizer_get_graphviz($list);
+  $result = entity_dependency_visualizer_get_list($entities);
+  $data = entity_dependency_visualizer_get_graphviz($result);
 
   // Add scripts.
   $settings_js = array(
@@ -123,82 +116,41 @@ function entity_dependency_visualizer_callback($type, $object, $name = NULL) {
 /**
  * Process dependencies.
  *
- * @param $dependencies array
- *   List of dependencies.
- * @paeram $list array
- *   Used only to store recursive values.
+ * @param $entities array
+ *   List of entities.
  * @return array
- *   The normalized array of dependencies.
+ *   The array of dependencies.
  * @todo
  *   Batch this to support large entities.
  */
-function entity_dependency_visualizer_get_list($entities, $max_time, &$list = array()) {
+function entity_dependency_visualizer_get_list($entities) {
   $iterator = new DeployIterator($entities);
   $dependencies = new EntityDependencyIteratorIterator($iterator);
 
+  $list = [];
   foreach ($dependencies as $entity) {
-    if (time() > $max_time) {
-      return $list;
-    }
-
     $type = NULL;
     $identifier = NULL;
-    $bundle = NULL;
-    $table = NULL;
-    $data = array (
-      'field' => '',
-      'value' => 0,
-    );
 
     if (isset($entity->uid) && isset($entity->name) && isset($entity->mail) && isset($entity->pass)) {
       $type = 'user';
-      $identifier = $entity->uid;
-      $bundle = 'user';
-      $table = 'users';
-      $data = array (
-        'field' => '',
-        'value' => 0,
-      );
+      $id = $entity->uid;
     }
     else if (isset($entity->fid) && isset($entity->filename) && isset($entity->filemime) && isset($entity->uri)) {
       $type = 'file';
-      $identifier = $entity->fid;
-      $bundle = 'file';
-      $table = 'file_managed';
-      $data = array (
-        'field' => 'timestamp',
-        'value' => $entity->timestamp,
-      );
+      $id = $entity->fid;
     }
     else if (isset($entity->nid)) {
       $type = 'node';
-      $identifier = $entity->nid;
-      $bundle = $entity->type;
-      $table = 'node';
-      $data = array (
-        'field' => 'vuuid',
-        'value' => $entity->vuuid,
-      );
+      $id = $entity->nid;
     }
     else if (isset($entity->tid)) {
       $type = 'taxonomy_term';
-      $identifier = $entity->tid;
-      $bundle = $entity->vocabulary_machine_name;
-      $table = 'taxonomy_term_data';
-      $data = array (
-        'field' => '',
-        'value' => 0,
-      );
+      $id = $entity->tid;
     }
     else if ($entity instanceof FieldCollectionItemEntity) {
       $type = 'field_collection_item';
-      $identifier = $entity->item_id;
-      $bundle = $entity->field_name;
-      $table = 'field_collection_item';
-      $data = array (
-        'field' => 'revision_id',
-        'value' => $entity->revision_id,
-      );
+      $id = $entity->item_id;
     }
     else if ($entity == new stdClass()) {
       // Ignore blank entities that were possibly removed in hook_deploy_deploy_entity_alter().
@@ -214,27 +166,17 @@ function entity_dependency_visualizer_get_list($entities, $max_time, &$list = ar
       continue;
     }
 
-    // Add to list and dedupe at the same time to remove circular dependencies.
-    if (!isset($list[$entity->uuid])) {
-      $list[$entity->uuid] = array(
-        'id' => $identifier,
-        'type' => $type,
-        'bundle' => $bundle,
-        'table' => $table,
-        'uuid' => $entity->uuid,
-        'parent' => $entity->__metadata['cause'],
-        'data' => $data,
-      );
-
-      $sub_dependencies = module_invoke_all('entity_dependencies', $entity, $type);
-      drupal_alter('entity_dependencies', $sub_dependencies, $entity, $type);
-      if (!empty($sub_dependencies)) {
-         entity_dependency_visualizer_get_list($sub_dependencies, $max_time, $list);
-      }
-    }
+    $list[$type][$id] = array (
+      'id' => $id,
+      'type' => $type,
+      'uuid' => $entity->uuid,
+    );
   }
 
-  return $list;
+  return array (
+    'causes' => $iterator->causes,
+    'keep' => $list,
+  );
 }
 
 /**
@@ -280,55 +222,62 @@ function entity_dependency_visualizer_get_graphviz($list) {
   }
 
   $i = 0;
-  foreach ($list as $uuid => $item) {
-    $i++;
-    $parent_uuid = '';
-    if ($parts = explode('/', $item['parent'])) {
-      if (isset($parts[1])) {
-        $parent_uuid = $parts[1];
+  $keep = $list['keep'];
+  $causes = $list['causes'];
+  foreach ($causes as $type => $items) {
+    foreach ($items as $id => $item) {
+      if (!is_array($item)) {
+        continue;
       }
-    }
-    $from = str_replace('-', '\n', $parent_uuid);
-    $to = str_replace('-', '\n', $uuid);
+      $to = $type . '\n' . $id;
+      $from = '';
+      if (isset($item['type'])) {
+        $from = $item['type'];
+      }
+      if (isset($item['id'])) {
+        $from .= '\n' . $item['id'];
+      }
+      $i++;
+      $label = '#' . $i . '\n';
 
-    $label = 'order: #' . $i . '\n';
-    $label .= 'field: ' . $item['bundle'] . '\n';
-    $label .= $item['type'] . '/' . $item['id'];
-    if (!empty($item['data']['field'])) {
-      $label .= '\n' . $item['data']['field'] . ': ' . $item['data']['value'];
-    }
-
-    switch ($item['type']) {
-      case 'node':
-        $color = 'crimson'; // @todo make colors customizable.
-        if ($item['bundle'] == 'manual_page') { // @todo use alter hook to allow changing colors
+      switch ($type) {
+        case 'node':
           $color = 'coral';
+          break;
+
+        case 'taxonomy_term':
+          $color = 'greenyellow';
+          break;
+
+        case 'field_collection_item':
+          $color = 'deepskyblue';
+          break;
+
+        case 'file':
+          $color = 'gold';
+          break;
+
+        case 'user':
+          $color = 'deeppink1';
+          break;
+
+        default:
+          $label = '(' . $type . ')\n' . $label;
+          $color = 'gray81';
+      }
+      if (!isset($keep[$type][$id])) {
+        if (variable_get('entity_dependency_visualizer_display_removed', FALSE)) {
+          // Do not display removed dependencies.
+          continue;
         }
-        break;
+        $color = 'ghostwhite';
+      }
 
-      case 'taxonomy_term':
-        $color = 'greenyellow';
-        break;
-
-      case 'field_collection_item':
-        $color = 'deepskyblue';
-        break;
-
-      case 'file':
-        $color = 'gold';
-        break;
-
-      default:
-        $label = '(' . $item['type'] . ') ' . $label;
-        $color = 'gray81';
+      $graph_obj .= '"' . $to . '" [color="' . $color . '"];' . PHP_EOL;
+      $graph_obj .= '"' . $from . '" -> "' . $to . '" [ label = "' . $label . '" ];' . PHP_EOL;
     }
-    $graph_obj .= '"' . $to . '" [color="' . $color . '"];' . PHP_EOL;
-
-    $graph_obj .= '"' . $from . '" -> "' . $to . '" [ label = "' . $label . '" ];' . PHP_EOL;
   }
-
   $graph_obj .= '}';
 
   return $graph_obj;
 }
-
