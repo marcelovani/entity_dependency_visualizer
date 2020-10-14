@@ -1,0 +1,5 @@
+entity_dependency_visualizer.entity_dependencies:
+  route_name: entity_dependency_visualizer.entity_dependencies
+  title: 'Content Tree'
+  base_route: entity.node.canonical
+  weight: 100

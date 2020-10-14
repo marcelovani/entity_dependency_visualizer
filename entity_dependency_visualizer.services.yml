@@ -1,0 +1,3 @@
+services:
+  entity_dependency_visualizer.entity_dependencies:
+    class: '\Drupal\entity_dependency_visualizer\Controller\EntityDependencies'

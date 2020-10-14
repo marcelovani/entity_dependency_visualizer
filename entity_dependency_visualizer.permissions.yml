@@ -1,0 +1,4 @@
+use entity dependencies:
+  description: 'Use entity dependencies visualizer'
+  title: 'Use entity dependencies'
+  restrict access: TRUE

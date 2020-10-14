@@ -1,0 +1,14 @@
+entity_dependency_visualizer.entity_dependencies:
+  path: '/node/{node}/entity_dependencies'
+  defaults:
+    _controller: '\Drupal\entity_dependency_visualizer\Controller\EntityDependencies::getGraph'
+    _title_callback: '\Drupal\entity_dependency_visualizer\Controller\EntityDependencies::getTitle'
+  requirements:
+    _module_dependencies: 'node'
+    _permission: 'use entity dependencies'
+    node: \d+
+  options:
+    _admin_route: TRUE
+    parameters:
+      entity:
+        type: entity:{node}

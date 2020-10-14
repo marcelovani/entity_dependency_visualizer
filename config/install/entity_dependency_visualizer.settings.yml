@@ -1,0 +1,26 @@
+show_graphviz_object: false
+ellipsis: true
+ignore_fields:
+  - 'node:field_1'
+  - 'taxonomy_term:field_2'
+  - 'paragraph:field_3'
+graph:
+  size: '30,30'
+  ratio: auto
+  rankdir: LR
+  arrows:
+    display_order: false
+    display_content_type: true
+    fontsize: 10
+  graph:
+    style: filled
+    fontname: Arial
+    fontsize: 40
+    fontstyle: bold
+    label: ''
+    ssize: '30,60'
+  node:
+    shape: box
+    style: filled
+    fontname: Arial
+    fontsize: 11

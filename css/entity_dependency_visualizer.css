@@ -1,0 +1,9 @@
+#graphviz_svg_div {
+  border: 1px solid;
+  width: 90%;
+}
+
+#graphviz_svg_div svg {
+  width: 100%!important;
+  height: 100%!important;
+}
