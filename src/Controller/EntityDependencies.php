@@ -28,6 +28,7 @@ class EntityDependencies extends ControllerBase {
    * @var array List of supported entity types.
    */
   protected $supported_entity_types = [
+    'user',
     'node',
     'paragraph',
     'taxonomy_term',
@@ -128,21 +129,6 @@ class EntityDependencies extends ControllerBase {
     if (isset($list[$entity->id()])) {
       return;
     }
-
-    //      case 'node':
-    //@todo add hook to allow to change to short title
-    //        if (!empty($entity->get('field_short_title')->value)) {
-    //          $title = $entity->get('field_short_title')->value;
-    //        }
-    //        if ($entity->getType() == 'manual') {
-    //          $color = 'gold';
-    //        } //@todo use hook to change look and feel
-
-    //      case 'paragraph':
-    //@todo add hook to allow to change to short title
-    //        if (!empty($entity->get('field_section_name')->value)) {
-    //          $title = $entity->get('field_section_name')->value;
-    //        }
 
     $list[$entity->id()]['info'] = [
       'type' => $entity->getEntityTypeId(),
