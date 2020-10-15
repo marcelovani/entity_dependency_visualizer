@@ -224,6 +224,10 @@ class EntityDependencies extends ControllerBase {
    */
   public function getColor($entity) {
     switch ($entity->getEntityTypeId()) {
+      case 'user':
+        $color = 'lightpink2';
+        break;
+
       case 'node':
         $color = 'coral';
         break;
@@ -255,6 +259,10 @@ class EntityDependencies extends ControllerBase {
    */
   public function getEntityUrl($entity) {
     switch ($entity->getEntityTypeId()) {
+      case 'user':
+        $url = '/user/' . $entity->id();
+        break;
+
       case 'node':
         $url = '/node/' . $entity->id() . '/entity_dependencies';
         break;
@@ -286,6 +294,10 @@ class EntityDependencies extends ControllerBase {
    */
   private function getEntityBundle($entity) {
     switch ($entity->getEntityTypeId()) {
+      case 'user':
+        $bundle = 'user';
+        break;
+
       case 'node':
         $bundle = $entity->getType();
         break;
