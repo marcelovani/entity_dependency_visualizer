@@ -113,7 +113,7 @@ class Graphviz extends ControllerBase {
    */
   private function checkDepth() {
     if (is_array($this->list) && sizeof($this->list) > 1000) {
-      $this->max_depth = 3;
+      $this->max_depth = 2;
       $this->messenger()->addMessage(
         $this->t('Due to the large amount of items, only %d child levels will be displayed. Click on the items to expand.',
           ['%d' => $this->max_depth]
