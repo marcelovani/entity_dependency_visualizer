@@ -1,6 +1,6 @@
 graphviz:
   js:
-    http://webgraphviz.com/viz.js: { type: external, attributes: { async: false } }
+    //webgraphviz.com/viz.js: { type: external, attributes: { async: false } }
     js/graphviz.js: {}
   css:
     theme:
@@ -8,5 +8,5 @@ graphviz:
 
 svg_zoom:
   js:
-    https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.5.0/dist/svg-pan-zoom.min.js: { type: external, attributes: { async: false } }
+    //cdn.jsdelivr.net/npm/svg-pan-zoom@3.5.0/dist/svg-pan-zoom.min.js: { type: external, attributes: { async: false } }
     js/svg_zoom.js: {}
