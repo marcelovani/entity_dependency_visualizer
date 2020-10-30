@@ -3,37 +3,67 @@
  * @file Contains hooks and logic for the visualizer.
  */
 
+use \Drupal\entity_dependency_visualizer\D8Shim\ConfigManager;
+use \Drupal\entity_dependency_visualizer\D8Shim\EntityManager;
+use \Drupal\entity_dependency_visualizer\Controller\EntityDependencies;
+use \Drupal\entity_dependency_visualizer\Controller\Graphviz;
+
+// PSR-4 (not natively autoloaded by Drupal 7).
+spl_autoload_register('entity_dependency_visualizer_autoload', TRUE, TRUE);
+
+/**
+ * PSR-4 autoloader callback for spl_autoload_register().
+ */
+function entity_dependency_visualizer_autoload($class) {
+  if (strpos($class, 'Drupal\entity_dependency_visualizer') === 0) {
+    $class = str_replace('Drupal\entity_dependency_visualizer', '', $class);
+    $file = 'src/' . str_replace('\\', '/', $class) . '.php';
+    require_once $file;
+  }
+}
+
 /**
  * Implements hook_menu().
  */
 function entity_dependency_visualizer_menu() {
 
   $items['node/%node/entity_dependency_visualizer'] = array(
-    'title' => 'Dependencies Graph',
+    'title' => 'Content Tree',
     'page callback' => 'entity_dependency_visualizer_callback',
     'page arguments' => array('node', 1),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('use entity dependencies'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 50,
   );
   $items['user/%user/entity_dependency_visualizer'] = array(
-    'title' => 'View Graph',
+    'title' => 'Content Tree',
     'page callback' => 'entity_dependency_visualizer_callback',
     'page arguments' => array('user', 1),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('use entity dependencies'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 50,
   );
   $items['taxonomy/term/%taxonomy_term/entity_dependency_visualizer'] = array(
-    'title' => 'View Graph',
+    'title' => 'Content Tree',
     'page callback' => 'entity_dependency_visualizer_callback',
     'page arguments' => array('taxonomy_term', 2, 'term'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('use entity dependencies'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 50,
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function entity_dependency_visualizer_permission() {
+  return array(
+    'use entity dependencies' => array(
+      'title' => t('Use entity dependencies visualizer'),
+    ),
+  );
 }
 
 /**
@@ -56,7 +86,66 @@ function entity_dependency_visualizer_admin_paths() {
  * Callback for menu items.
  */
 function entity_dependency_visualizer_callback($type, $object, $name = NULL) {
+  $entity_wrapper = entity_metadata_wrapper($type, $object);
+  $entity_manager = new EntityManager();
+  $entity = $entity_manager->load($type, $entity_wrapper->getIdentifier());
 
+  $entity_dependencies = new EntityDependencies();
+  $graphviz = new Graphviz($entity_dependencies->getList($entity));
+  $data = $graphviz->getGraphViz();
+
+  // @todo add a config form.
+  $configuration = new ConfigManager('entity_dependency_visualizer.settings');
+  if ($configuration->get('show_graphviz_object')) {
+    $build['graphviz_object'] = [
+      '#title' => 'http://www.webgraphviz.com object',
+      '#type' => 'textarea',
+      '#rows' => 4,
+      '#cols' => 60,
+      '#attributes' => ['style="width: 100%"'],
+      '#value' => $data,
+    ];
+  }
+
+  $build['graph'] = [
+    '#title' => 'Container',
+    '#markup' => '<div id="graphviz_svg_div"></div>',
+    '#attached' => [
+      'library' => [
+        'entity_dependency_visualizer/graphviz',
+        'entity_dependency_visualizer/svg_zoom',
+      ],
+      'drupalSettings' => [
+        'entity_dependency_visualizer' => [
+          'container' => 'graphviz_svg_div',
+          'data' => $data,
+        ],
+      ],
+    ],
+  ];
+
+
+  //$build = $entity_dependencies->getGraph($entity);
+
+  // Add scripts.
+  $settings_js = array(
+    'entity_dependency_visualizer' => array(
+      'container' => 'graphviz_svg_div',
+      'data' => $data,
+    ),
+  );
+  drupal_add_js($settings_js, 'setting');
+//  drupal_add_js('//cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js', 'external');
+  drupal_add_js('//webgraphviz.com/viz.js', 'external');
+  drupal_add_js('//cdn.jsdelivr.net/npm/svg-pan-zoom@3.5.0/dist/svg-pan-zoom.min.js', 'external');
+//  drupal_add_js(drupal_get_path('module', 'entity_dependency_visualizer') . '/js/entity_dependency_visualizer.js');
+  drupal_add_js(drupal_get_path('module', 'entity_dependency_visualizer') . '/js/graphviz.js');
+  drupal_add_js(drupal_get_path('module', 'entity_dependency_visualizer') . '/js/svg_zoom.js');
+
+  return $build;
+
+
+  return 'aaaa';
   switch ($type) {
     case 'node':
       if (!user_access('edit own ' . $object->type . ' content') && !user_access('edit any ' . $object->type . ' content')) {
@@ -101,7 +190,8 @@ function entity_dependency_visualizer_callback($type, $object, $name = NULL) {
     ),
   );
   drupal_add_js($settings_js, 'setting');
-  drupal_add_js('http://webgraphviz.com/viz.js', 'external');
+  drupal_add_js('//cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js', 'external');
+  drupal_add_js('//cdn.jsdelivr.net/npm/svg-pan-zoom@3.5.0/dist/svg-pan-zoom.min.js', 'external');
   drupal_add_js(drupal_get_path('module', 'entity_dependency_visualizer') . '/js/entity_dependency_visualizer.js');
 
   $html = '';

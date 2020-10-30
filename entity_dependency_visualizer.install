@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * $file Install file
+ */
+
+use \Drupal\entity_dependency_visualizer\D8Shim\ConfigManager;
+
+/**
+ * Implements hook_install().
+ */
+function entity_dependency_visualizer_install() {
+  $config_manager = new ConfigManager('entity_dependency_visualizer.settings');
+
+  $config = [
+    'show_graphviz_object' => 1,
+    'ellipsis' => 1,
+    'ignore_fields' => [
+      'node:field_1',
+      'taxonomy_term:field_2',
+      'paragraph:field_3',
+    ],
+    'graph' => [
+      'size' => '30, 30',
+      'ratio' => 'auto',
+      'rankdir' => 'LR',
+      'arrows' => [
+        'display_order' => 0,
+        'display_content_type' => 1,
+        'fontsize' => 10,
+      ],
+      'graph' => [
+        'style' => 'filled',
+        'fontname' => 'Arial',
+        'fontsize' => 40,
+        'fontstyle' => 'bold',
+        'label' => '',
+        'ssize' => '30, 60',
+      ],
+      'node' => [
+        'shape' => 'rectangle',
+        'style' => 'filled',
+        'fontname' => 'Arial',
+        'fontsize' => 40,
+      ],
+    ],
+  ];
+
+  $config_manager->set($config);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function entity_dependency_visualizer_uninstall() {
+  variable_del('entity_dependency_visualizer_settings');
+}
