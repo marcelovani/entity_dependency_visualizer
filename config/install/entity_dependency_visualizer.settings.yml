@@ -20,7 +20,7 @@ graph:
     label: ''
     ssize: '30,60'
   node:
-    shape: square
+    shape: rectangle
     style: filled
     fontname: Arial
     fontsize: 11
