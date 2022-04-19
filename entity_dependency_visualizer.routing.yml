@@ -12,3 +12,13 @@ entity_dependency_visualizer.entity_dependencies:
     parameters:
       entity:
         type: entity:{node}
+
+entity_dependency_visualizer.settings:
+  path: '/admin/config/development/entity_dependency_visualizer/settings'
+  defaults:
+    _form: '\Drupal\entity_dependency_visualizer\Form\ConfigForm'
+    _title: 'Configure Entity Dependency Visualizer'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    _admin_route: TRUE

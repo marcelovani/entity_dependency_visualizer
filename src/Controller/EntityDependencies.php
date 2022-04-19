@@ -64,7 +64,6 @@ class EntityDependencies extends ControllerBase {
     $graphviz = new Graphviz($this->getList($node));
     $data = $graphviz->getGraphViz();
 
-    // @todo add a config form.
     if ($this->configuration->get('show_graphviz_object')) {
       $build['graphviz_object'] = [
         '#title' => 'http://www.webgraphviz.com object',
