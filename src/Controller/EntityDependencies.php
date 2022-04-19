@@ -307,7 +307,7 @@ class EntityDependencies extends ControllerBase {
         break;
 
       case 'taxonomy_term':
-        $bundle = $entity->getVocabularyId();
+        $bundle = $entity->bundle();
         break;
 
       default:
