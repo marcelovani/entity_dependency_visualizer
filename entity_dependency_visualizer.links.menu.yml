@@ -1,0 +1,5 @@
+entity_dependency_visualizer.settings:
+  title: 'Entity Dependency Visualizer'
+  description: 'Configure the look and feel of graphs.'
+  route_name: entity_dependency_visualizer.settings
+  parent: system.admin_config_development
