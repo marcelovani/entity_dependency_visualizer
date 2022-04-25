@@ -70,19 +70,6 @@ class DependenciesCalculatorAbstract extends ControllerBase {
     return $this->t('Content Dependencies Graph');
   }
 
-//  /**
-//   * Returns the list of entity dependencies.
-//   *
-//   * @param \Drupal\Core\Entity\EntityInterface $entity
-//   *   The entity.
-//   *
-//   * @return array
-//   *   The list of UUIDs of dependencies (entities).
-//   *
-//   * @throws \Exception
-//   */
-//  protected function getEntityDependencies(EntityInterface $entity) {}
-
   /**
    * @inheritDoc
    */

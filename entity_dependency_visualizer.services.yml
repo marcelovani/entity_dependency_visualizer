@@ -1,7 +1,4 @@
 services:
-#  entity_dependency_visualizer.entity_dependencies_controller:
-#    class: '\Drupal\entity_dependency_visualizer\Controller\DependenciesCalculator'
-
   entity_dependency_visualizer.graphviz:
     class: '\Drupal\entity_dependency_visualizer\Controller\Graphviz'
 
@@ -13,10 +10,6 @@ services:
     arguments: ['@config.manager']
     tags:
       - { name: event_subscriber, priority: -1 }
-
-#  entity_dependency_visualizer.dependencies_calculator_class:
-#    class: Drupal\entity_dependency_visualizer\Controller\DependenciesCalculator
-#    arguments: [ '@entity_dependency_visualizer.entity_dependencies_controller', '@config.factory' ]
 
   entity_dependency_visualizer.entity_dependencies_plugin:
     class: '\Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator\DependenciesCalculatorAbstract'
