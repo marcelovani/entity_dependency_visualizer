@@ -6,6 +6,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Url;
+use Drupal\Core\Cache\Cache;
 
 /**
  * Settings form for Entity Dependency Visualizer.
@@ -32,7 +33,22 @@ class ConfigForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    //@todo make colours configurable
     $config = $this->config('entity_dependency_visualizer.settings');
+
+    $plugin_manager = \Drupal::service('plugin.manager.entity_dependency_visualizer');
+    $options = [];
+    foreach ($plugin_manager->getDefinitions() as $id => $item) {
+      // @todo only show the option if module exists i.e. depcalc
+      $options[$id] = $item['name'];
+    }
+    $form['dependency_calculator_plugin'] = [
+      '#type' => 'select',
+      '#options' => $options,
+      '#title' => $this->t('Dependency calculator plugin'),
+      '#default_value' => $config->get('dependency_calculator_plugin') ?? 'native',
+      '#description' => $this->t('Select which plugin to use for dependency calculations.'),
+    ];
 
     $form['show_graphviz_object'] = [
       '#type' => 'checkbox',
@@ -48,6 +64,7 @@ class ConfigForm extends ConfigFormBase {
       '#description' => $this->t('Ellipsis will be used to shorten the name of entities.'),
     ];
 
+    // @todo show only for native calculator
     $form['ignore_fields'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Ignore fields'),
@@ -103,10 +120,24 @@ class ConfigForm extends ConfigFormBase {
       '#description' => '',
     ];
 
+    $form['graph']['arrows']['arrow_display_field_name'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Display field name'),
+      '#default_value' => $graph['arrows']['display_field_name'],
+      '#description' => '',
+    ];
+
     $form['graph']['arrows']['arrow_display_content_type'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Display content type'),
       '#default_value' => $graph['arrows']['display_content_type'],
+      '#description' => '',
+    ];
+
+    $form['graph']['arrows']['arrow_display_entity_id'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Display entity Id'),
+      '#default_value' => $graph['arrows']['display_entity_id'],
       '#description' => '',
     ];
 
@@ -186,7 +217,7 @@ class ConfigForm extends ConfigFormBase {
     // See https://graphviz.org/doc/info/shapes.html
     $form['graph']['node']['node_shape'] = [
       '#type' => 'select',
-      '#options' => $this->getOptions(['box', 'polygon', 'ellipse', 'oval', 'circle', 'rect', 'rectangle', 'cds', 'note']),
+      '#options' => $this->getOptions(['box', 'polygon', 'ellipse', 'oval', 'circle', 'rect', 'rectangle', 'note']),
       '#title' => $this->t('Node shape'),
       '#default_value' => $graph['node']['shape'],
     ];
@@ -196,6 +227,14 @@ class ConfigForm extends ConfigFormBase {
       '#options' => $this->getOptions(['filled', 'invis']),
       '#title' => $this->t('Node style'),
       '#default_value' => $graph['node']['style'],
+    ];
+
+    $form['graph']['node']['node_caption'] = [
+      '#type' => 'select',
+      '#options' => $this->getOptions(['uuid', 'id', 'label']),
+      '#title' => $this->t('Caption'),
+      '#default_value' => $graph['node']['caption'],
+      '#description' => $this->t('Select what you want to display inside the shapes.'),
     ];
 
     $form['graph']['node']['node_fontname'] = [
@@ -258,7 +297,9 @@ class ConfigForm extends ConfigFormBase {
     $graph['rankdir'] = $values['graph_rankdir'];
     $graph['arrows'] = [];
     $graph['arrows']['display_order'] = $values['arrow_display_order'];
+    $graph['arrows']['display_field_name'] = $values['arrow_display_field_name'];
     $graph['arrows']['display_content_type'] = $values['arrow_display_content_type'];
+    $graph['arrows']['display_entity_id'] = $values['arrow_display_entity_id'];
     $graph['arrows']['fontsize'] = $values['arrow_fontsize'];
     $graph['graph'] = [];
     $graph['graph']['style'] = $values['graph_style'];
@@ -272,12 +313,17 @@ class ConfigForm extends ConfigFormBase {
     $graph['node']['style'] = $values['node_style'];
     $graph['node']['fontname'] = $values['node_fontname'];
     $graph['node']['fontsize'] = $values['node_fontsize'];
+    $graph['node']['caption'] = $values['node_caption'];
 
     $config->set('show_graphviz_object', $values['show_graphviz_object'])
+      ->set('dependency_calculator_plugin', $values['dependency_calculator_plugin'])
       ->set('ellipsis', $values['ellipsis'])
       ->set('ignore_fields', explode(PHP_EOL, $values['ignore_fields']))
       ->set('graph', $graph)
       ->save();
+
+    // @todo this is not working.
+    Cache::invalidateTags(['routes']);
 
     parent::submitForm($form, $form_state);
   }
