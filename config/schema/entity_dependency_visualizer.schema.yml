@@ -2,6 +2,9 @@ entity_dependency_visualizer.settings:
   type: config_object
   label: 'Entity Dependency Visualizer settings'
   mapping:
+    dependency_calculator_plugin:
+      type: string
+      label: 'The plugin used for dependencies calculations'
     show_graphviz_object:
       type: boolean
       label: 'Display graphviz object on the top of the page'
@@ -71,6 +74,12 @@ entity_dependency_visualizer.graph.arrows:
     display_content_type:
       type: boolean
       label: 'Display content type in the label'
+    display_field_name:
+      type: boolean
+      label: 'Display field name in the label'
+    display_entity_id:
+      type: boolean
+      label: 'Display entity Id in the label'
     fontsize:
       type: integer
       label: 'Label font size'
@@ -97,3 +106,6 @@ entity_dependency_visualizer.graph.node:
     fontsize:
       type: integer
       label: 'Label font size'
+    caption:
+      type: string
+      label: 'Caption to display inside the shape'
