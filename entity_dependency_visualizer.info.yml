@@ -1,5 +1,5 @@
 name : 'Entity Dependency Visualizer'
 description : 'Displays a graphic output of the dependencies of entities'
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^10
 type: module
 package: Content
