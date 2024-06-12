@@ -68,7 +68,7 @@ class ConfigForm extends ConfigFormBase {
     $form['ignore_fields'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Ignore fields'),
-      '#default_value' => implode(PHP_EOL, $config->get('ignore_fields')),
+      '#default_value' => implode(PHP_EOL, $config->get('ignore_fields') ?? []),
       '#size' => 40,
       '#description' => $this->t('Format entity_name:field_name. One field per line. i.e. node:field_foo'),
     ];
