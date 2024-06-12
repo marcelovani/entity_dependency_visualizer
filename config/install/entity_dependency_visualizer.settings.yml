@@ -1,3 +1,4 @@
+dependency_calculator_plugin: 'native'
 show_graphviz_object: false
 ellipsis: true
 ignore_fields:
@@ -11,6 +12,8 @@ graph:
   arrows:
     display_order: false
     display_content_type: true
+    display_field_name: true
+    display_entity_id: true
     fontsize: 10
   graph:
     style: filled
@@ -24,3 +27,4 @@ graph:
     style: filled
     fontname: Arial
     fontsize: 11
+    caption: 'uuid'
