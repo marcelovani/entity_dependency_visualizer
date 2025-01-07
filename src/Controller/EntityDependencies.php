@@ -208,7 +208,7 @@ class EntityDependencies extends ControllerBase {
    *    The label.
    */
   public function getEntityTitle($entity) {
-    return $entity->label();
+    return $entity->label() ?? '';
   }
 
   /**
