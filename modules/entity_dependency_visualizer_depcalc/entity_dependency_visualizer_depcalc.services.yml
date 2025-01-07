@@ -1,0 +1,6 @@
+services:
+  entity_dependency_visualizer.dependency_collector:
+    class: Drupal\entity_dependency_visualizer\EventSubscriber\DependencyCollector
+    arguments: ['@config.manager']
+    tags:
+      - { name: event_subscriber, priority: -1 }

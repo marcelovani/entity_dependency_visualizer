@@ -10,7 +10,7 @@ interface DependenciesCalculatorInterface {
   /**
    * Get page title.
    *
-   * @return sting
+   * @return string
    *    The title.
    */
   public function getTitle();

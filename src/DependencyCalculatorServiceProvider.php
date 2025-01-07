@@ -21,7 +21,6 @@ class DependencyCalculatorServiceProvider extends ServiceProviderBase {
     }
     $class = "Drupal\entity_dependency_visualizer\Controller\\$class";
     $container->getDefinition('entity_dependency_visualizer.dependencies_calculator_class')->setClass($class);
-    dump($class);exit;
   }
 
 }

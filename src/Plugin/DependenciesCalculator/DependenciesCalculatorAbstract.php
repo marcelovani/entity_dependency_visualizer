@@ -11,11 +11,6 @@ use Drupal\node\NodeInterface;
 use Drupal\Taxonomy\TermInterface;
 use Drupal\user\UserInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\file\Entity\File;
-use Drupal\KernelTests\KernelTestBase;
-use Drupal\taxonomy\Entity\Term;
-use Drupal\user\Entity\User;
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\entity_dependency_visualizer\Controller\Graphviz;
 
 //class DependenciesCalculatorAbstract extends ControllerBase implements DependenciesCalculatorInterface { //@todo fix this

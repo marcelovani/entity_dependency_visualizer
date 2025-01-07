@@ -3,7 +3,6 @@
 namespace Drupal\entity_dependency_visualizer\EventSubscriber;
 
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\depcalc\DependencyCalculatorEvents;
 use Drupal\depcalc\Event\CalculateEntityDependenciesEvent;
 use Drupal\depcalc\EventSubscriber\DependencyCollector\BaseDependencyCollector;

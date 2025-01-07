@@ -6,19 +6,9 @@
 
 namespace Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator;
 
-use Drupal\Core\Controller\ControllerBase;
 use Drupal\depcalc\DependencyStack;
 use Drupal\depcalc\DependentEntityWrapper;
-use Drupal\depcalc\DependentEntityWrapperInterface;
-use Drupal\node\NodeInterface;
-use Drupal\Taxonomy\TermInterface;
-use Drupal\user\UserInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\file\Entity\File;
-use Drupal\KernelTests\KernelTestBase;
-use Drupal\taxonomy\Entity\Term;
-use Drupal\user\Entity\User;
-use Drupal\Core\Entity\ContentEntityInterface;
 
 /**
  * Define Depcalc dependencies calculator plugin.

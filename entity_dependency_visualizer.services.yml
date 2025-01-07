@@ -5,12 +5,6 @@ services:
   entity_dependency_visualizer.dependency_stack:
     class: Drupal\entity_dependency_visualizer\DependencyStack
 
-  entity_dependency_visualizer.dependency_collector:
-    class: Drupal\entity_dependency_visualizer\EventSubscriber\DependencyCollector
-    arguments: ['@config.manager']
-    tags:
-      - { name: event_subscriber, priority: -1 }
-
   entity_dependency_visualizer.entity_dependencies_plugin:
     class: '\Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator\DependenciesCalculatorAbstract'
 

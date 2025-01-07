@@ -1,0 +1,8 @@
+name : 'Entity Dependency Visualizer + Dependency Calculator'
+description : 'Uses Dependency Calculator to calculate dependencies'
+core_version_requirement: ^8 || ^9 || ^10 || ^11
+type: module
+package: Content
+configure: entity_dependency_visualizer.settings
+dependencies:
+  - depcalc:depcalc
