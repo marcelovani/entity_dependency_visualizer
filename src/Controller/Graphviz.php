@@ -36,12 +36,14 @@ class Graphviz extends ControllerBase {
   /**
    * @var $max_depth The max level of nesting. This is useful to limit large
    * amounts of data that will require  more memory than the browser can handle.
+   * @todo make this configurable
    */
   protected $max_depth = 100;
 
   /**
    * @var int Used to limit the size of node labels. Anything longer that this
    * will be transformed to ellipsis ...
+   * @todo make this configurable
    */
   protected $max_node_label_size = 30;
 
@@ -52,10 +54,15 @@ class Graphviz extends ControllerBase {
    *    The array of dependencies;
    */
   public function __construct($list) {
+    // @todo show config options on the top of graphviz on entities
     $this->configuration = $this->config('entity_dependency_visualizer.settings');
     $this->list = $list;
     $this->checkDepth();
   }
+
+  //@todo look at https://www.drupal.org/project/graphapi/ and https://www.drupal.org/project/field_tools and https://www.drupal.org/project/graphviz_filter
+  //@todo add module to https://graphviz.org/resources/ page
+
 
   /**
    * Gets the Graphviz object, see Graphviz http://www.webgraphviz.com
@@ -95,9 +102,11 @@ class Graphviz extends ControllerBase {
         $i++;
         $label = $this->getArrowLabel($child_item, $i);
 
-        // Add node row.
-        $to = "$child_item [label=\"$label\"];\n";
-        $this->graph_obj .= "$from -> $to";
+        // @todo check why we have items without order coming from depcalc?
+        if (isset($this->list[$child_item]['info']['order'])) {
+          // Add node row.
+          $this->graph_obj .= "\"$from\" -> \"$child_item\" [label=\"$label\"];" . PHP_EOL;
+        }
       }
     }
 
@@ -142,10 +151,11 @@ class Graphviz extends ControllerBase {
    * @see getDefinitions()
    */
   private function initGraph($definitions) {
-    $graph_obj = 'digraph tree {';
+    $graph_obj = 'digraph {' . PHP_EOL;
+    unset($definitions['size']);
     foreach ($definitions as $key => $definition) {
       if (is_array($definition)) {
-        $graph_obj .= "\t" . $key . ' [';
+        $graph_obj .= $key . ' [';
         foreach ($definition as $dk => $item) {
           $graph_obj .= $dk . '="' . $item . '" ';
         }
@@ -168,10 +178,17 @@ class Graphviz extends ControllerBase {
    *    The label element.
    */
   private function getNodeLabel($item) {
-    $label = $item['info']['title'];
+    //@todo static cache $this->configuration
+    $caption = $this->configuration->get('graph.node.caption');
+    $label = $item['info'][$caption];
+
+    // Break UUID in to multiple lines.
+    if ($caption == 'uuid') {
+      $label = str_replace('-', '\n', $label);
+    }
 
     // Add ellipsis if necessary.
-    if ($this->configuration->get('ellipsis')) {
+    if ($caption == 'name' && $this->configuration->get('ellipsis')) {
       $label = str_replace(['"', '“', '`', '\''], '', $label);
       if (strlen($label) > $this->max_node_label_size) {
         $label = mb_substr($label, 0, $this->max_node_label_size) . '...';
@@ -197,15 +214,26 @@ class Graphviz extends ControllerBase {
   private function getArrowLabel($item, $i) {
     $label = '';
 
-    // Display the order number.
-    if ($this->configuration->get('graph.arrows.display_order')) {
-      $label .= '#' . $i . ' ';
-    }
+    if (!empty($this->list[$item])) {
+      // Display the order number.
+      if ($this->configuration->get('graph.arrows.display_order')) {
+        $label .= 'order: #' . $this->list[$item]['info']['order'] . '\n';
+      }
 
-    // Display the node type.
-    if ($this->configuration->get('graph.arrows.display_content_type')) {
-      if (!empty($this->list[$item])) {
-        $label .= $this->list[$item]['info']['bundle'];
+      // Display the node type.
+      if ($this->configuration->get('graph.arrows.display_content_type')) {
+        //todo use t()
+        $label .= 'bundle/name: ' . $this->list[$item]['info']['bundle'] . '\n';
+      }
+
+      // Display entity id.
+      if ($this->configuration->get('graph.arrows.display_entity_id')) {
+        $label .=  'url: ' . $this->list[$item]['info']['type'] . '/' . $this->list[$item]['info']['id'] . '\n';
+      }
+
+      // Display the field name.
+      if ($this->configuration->get('graph.arrows.display_field_name')) {
+        $label .= 'field: ' . $this->list[$item]['info']['field'] . '\n';
       }
     }
 

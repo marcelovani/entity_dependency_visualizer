@@ -109,6 +109,24 @@ test-9:
 	    --version dev-1.x \
 	    --dependencies ${DEPENDENCIES}
 
+# Test in non-interactive mode
+test-10:
+	docker run --name drupalci_${PROJECT_NAME} \
+	    -v ~/artifacts:/artifacts \
+	    --rm marcelovani/drupalci:10-apache \
+	    --project ${PROJECT_NAME} \
+	    --version dev-1.x \
+	    --dependencies ${DEPENDENCIES}
+
+# Test in non-interactive mode
+test-11:
+	docker run --name drupalci_${PROJECT_NAME} \
+	    -v ~/artifacts:/artifacts \
+	    --rm marcelovani/drupalci:11-apache \
+	    --project ${PROJECT_NAME} \
+	    --version dev-1.x \
+	    --dependencies ${DEPENDENCIES}
+
 open:
 	open "http://$(PROJECT_BASE_URL):${PROJECT_PORT}"
 

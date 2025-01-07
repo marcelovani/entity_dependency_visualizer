@@ -2,6 +2,12 @@
     "name": "drupal/entity_dependency_visualizer",
     "type": "drupal-module",
     "description": "Displays a graphic output of the dependencies of entities.",
+    "authors": [
+        {
+            "name": "Marcelo Vani",
+            "homepage": "https://www.drupal.org/u/marcelovani"
+        }
+    ],
     "license": "GPL-2.0-or-later",
     "extra": {
         "branch-alias": {

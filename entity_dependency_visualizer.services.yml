@@ -1,3 +1,25 @@
 services:
-  entity_dependency_visualizer.entity_dependencies:
-    class: '\Drupal\entity_dependency_visualizer\Controller\EntityDependencies'
+  entity_dependency_visualizer.graphviz:
+    class: '\Drupal\entity_dependency_visualizer\Controller\Graphviz'
+
+  entity_dependency_visualizer.dependency_stack:
+    class: Drupal\entity_dependency_visualizer\DependencyStack
+
+  entity_dependency_visualizer.dependency_collector:
+    class: Drupal\entity_dependency_visualizer\EventSubscriber\DependencyCollector
+    arguments: ['@config.manager']
+    tags:
+      - { name: event_subscriber, priority: -1 }
+
+  entity_dependency_visualizer.entity_dependencies_plugin:
+    class: '\Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator\DependenciesCalculatorAbstract'
+
+  entity_dependency_visualizer.route_subscriber:
+    class: Drupal\entity_dependency_visualizer\Routing\RouteSubscriber
+    arguments: ['@entity_type.manager']
+    tags:
+      - { name: event_subscriber }
+
+  plugin.manager.entity_dependency_visualizer:
+    class: 'Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator\DependenciesCalculatorManager'
+    parent: default_plugin_manager

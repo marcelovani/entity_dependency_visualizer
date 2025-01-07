@@ -3,3 +3,4 @@ description : 'Displays a graphic output of the dependencies of entities'
 core_version_requirement: ^8 || ^9 || ^10 || ^11
 type: module
 package: Content
+configure: entity_dependency_visualizer.settings

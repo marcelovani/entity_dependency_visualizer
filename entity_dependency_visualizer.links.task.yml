@@ -1,5 +1,11 @@
-entity_dependency_visualizer.entity_dependencies:
-  route_name: entity_dependency_visualizer.entity_dependencies
-  title: 'Content Tree'
+entity_dependency_visualizer.node_dependencies:
+  route_name: entity_dependency_visualizer.node_dependencies
+  title: 'Entity dependencies'
   base_route: entity.node.canonical
+  weight: 100
+
+entity_dependency_visualizer.taxonomy_term_dependencies:
+  route_name: entity_dependency_visualizer.taxonomy_term_dependencies
+  title: 'Entity dependencies'
+  base_route: entity.taxonomy_term.canonical
   weight: 100
