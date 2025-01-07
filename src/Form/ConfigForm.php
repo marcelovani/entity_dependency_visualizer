@@ -4,7 +4,6 @@ namespace Drupal\entity_dependency_visualizer\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Url;
 use Drupal\Core\Cache\Cache;
 
 /**
@@ -35,6 +34,7 @@ class ConfigForm extends ConfigFormBase {
     //@todo make colours configurable
     $config = $this->config('entity_dependency_visualizer.settings');
 
+    // @todo: Use dependency injection.
     $plugin_manager = \Drupal::service('plugin.manager.entity_dependency_visualizer');
     $options = [];
     foreach ($plugin_manager->getDefinitions() as $id => $item) {
@@ -321,8 +321,9 @@ class ConfigForm extends ConfigFormBase {
       ->set('graph', $graph)
       ->save();
 
-    // @todo this is not working.
-    Cache::invalidateTags(['routes']);
+    // @todo Clear route caches automatically when this is saved and remove the warning below.
+    Cache::invalidateTags($config->getCacheTags());
+    \Drupal::messenger()->addWarning(t('Please clear caches manually for the changes to take action.'));
 
     parent::submitForm($form, $form_state);
   }

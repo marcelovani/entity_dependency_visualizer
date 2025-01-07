@@ -4,11 +4,12 @@
  * @file Entity dependencies.
  */
 
-namespace Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator;
+namespace Drupal\entity_dependency_visualizer_depcalc\Plugin\DependenciesCalculator;
 
 use Drupal\depcalc\DependencyStack;
 use Drupal\depcalc\DependentEntityWrapper;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator\DependenciesCalculatorAbstract;
 
 /**
  * Define Depcalc dependencies calculator plugin.

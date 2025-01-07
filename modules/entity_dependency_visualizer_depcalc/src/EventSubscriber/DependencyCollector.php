@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\entity_dependency_visualizer\EventSubscriber;
+namespace Drupal\entity_dependency_visualizer_depcalc\EventSubscriber;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\depcalc\DependencyCalculatorEvents;
