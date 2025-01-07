@@ -5,11 +5,21 @@ PWD=$(shell pwd)
 include .env
 export $(shell sed 's/=.*//' .env)
 
+install-local:
+	# docker exec -i drupalci_${PROJECT_NAME} bash -c "sudo -u www-data php web/core/scripts/drupal install minimal"
+	docker exec -i drupalci_${PROJECT_NAME} bash -c "sudo -u www-data php web/core/scripts/drupal install standard"
+
+reinstall-local:
+	docker exec -i drupalci_${PROJECT_NAME} bash -c "rm -rf web/sites/default/files";
+	docker exec -i drupalci_${PROJECT_NAME} bash -c "rm -rf web/sites/default/settings.php;";
+	docker exec -i drupalci_${PROJECT_NAME} bash -c "chmod 777 web/sites/default;";
+	make install-local
+
 # Start container and build Drupal 8 locally
 build-local-8:
 	docker run --rm --name drupalci_${PROJECT_NAME} \
 	    -v ${PWD}/:/var/www/html/web/modules/contrib/${PROJECT_NAME} \
-	    -v ${PWD}/contrib/depalc:/var/www/html/web/modules/contrib/depcalc \
+	    -v ${PWD}/../modules/:/var/www/html/web/modules \
 	    -v ~/artifacts:/artifacts \
 	    -p ${PROJECT_PORT}:80 \
 	    -d marcelovani/drupalci:8-apache-interactive
@@ -19,15 +29,34 @@ build-local-8:
 build-local-9:
 	docker run --rm --name drupalci_${PROJECT_NAME} \
 	    -v ${PWD}/:/var/www/html/web/modules/contrib/${PROJECT_NAME} \
-	    -v ${PWD}/contrib/depalc:/var/www/html/web/modules/contrib/depcalc \
+	    -v ${PWD}/../modules/:/var/www/html/web/modules \
 	    -v ${PWD}/../artifacts:/artifacts \
 	    -p ${PROJECT_PORT}:80 \
 	    -d marcelovani/drupalci:9-apache-interactive
 	make build-local
 
+# Start container and build Drupal 10 locally
+build-local-10:
+	docker run --rm --name drupalci_${PROJECT_NAME} \
+	    -v ${PWD}/:/var/www/html/web/modules/contrib/${PROJECT_NAME} \
+	    -v ${PWD}/../modules/:/var/www/html/web/modules \
+	    -v ${PWD}/../artifacts:/artifacts \
+	    -p ${PROJECT_PORT}:80 \
+	    -d marcelovani/drupalci:10-apache-interactive
+	make build-local
+
+# Start container and build Drupal 11 locally
+build-local-11:
+	docker run --rm --name drupalci_${PROJECT_NAME} \
+	    -v ${PWD}/:/var/www/html/web/modules/contrib/${PROJECT_NAME} \
+	    -v ${PWD}/../modules/:/var/www/html/web/modules \
+	    -v ${PWD}/../artifacts:/artifacts \
+	    -p ${PROJECT_PORT}:80 \
+	    -d marcelovani/drupalci:11-apache-interactive
+	make build-local
+
 build-local:
 	docker exec -i drupalci_${PROJECT_NAME} bash -c "composer require ${DEPENDENCIES}"
-	docker exec -i drupalci_${PROJECT_NAME} bash -c "sudo -u www-data php web/core/scripts/drupal install standard"
 
 # Test local build
 test-local:
@@ -76,6 +105,24 @@ test-9:
 	docker run --name drupalci_${PROJECT_NAME} \
 	    -v ~/artifacts:/artifacts \
 	    --rm marcelovani/drupalci:9-apache \
+	    --project ${PROJECT_NAME} \
+	    --version dev-1.x \
+	    --dependencies ${DEPENDENCIES}
+
+# Test in non-interactive mode
+test-10:
+	docker run --name drupalci_${PROJECT_NAME} \
+	    -v ~/artifacts:/artifacts \
+	    --rm marcelovani/drupalci:10-apache \
+	    --project ${PROJECT_NAME} \
+	    --version dev-1.x \
+	    --dependencies ${DEPENDENCIES}
+
+# Test in non-interactive mode
+test-11:
+	docker run --name drupalci_${PROJECT_NAME} \
+	    -v ~/artifacts:/artifacts \
+	    --rm marcelovani/drupalci:11-apache \
 	    --project ${PROJECT_NAME} \
 	    --version dev-1.x \
 	    --dependencies ${DEPENDENCIES}

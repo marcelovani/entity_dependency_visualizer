@@ -9,8 +9,6 @@
 namespace Drupal\entity_dependency_visualizer\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\node\NodeInterface;
-use Drupal\Core\Url;
 use Drupal\Component\Utility\Xss;
 
 class Graphviz extends ControllerBase {
