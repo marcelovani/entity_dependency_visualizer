@@ -7,14 +7,20 @@
 namespace Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\entity_dependency_visualizer\DependencyStack;
+use Drupal\entity_dependency_visualizer\Controller\Graphviz;
 use Drupal\node\NodeInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Taxonomy\TermInterface;
 use Drupal\user\UserInterface;
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\entity_dependency_visualizer\Controller\Graphviz;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
-//class DependenciesCalculatorAbstract extends ControllerBase implements DependenciesCalculatorInterface { //@todo fix this
+// class DependenciesCalculatorAbstract extends ControllerBase implements DependenciesCalculatorInterface { //@todo fix this
 class DependenciesCalculatorAbstract extends ControllerBase {
+
+  use StringTranslationTrait;
 
   /**
    * Calculates all the dependencies of a given entity.
@@ -43,12 +49,34 @@ class DependenciesCalculatorAbstract extends ControllerBase {
   protected $dependentEntityWrapper;
 
   /**
-   * Constructor.
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  public function __construct() {
+  protected $entityTypeManager;
+
+  /**
+   * Constructs the dependency calculator.
+   * 
+  * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager service.
+   * @param \Drupal\entity_dependency_visualizer\DependencyStack $dependency_stack
+   *   The dependency stack.
+   */
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, DependencyStack $dependency_stack) {
     $this->configuration = $this->config('entity_dependency_visualizer.settings');
-    // @todo inject this service
-    $this->dependency_stack = \Drupal::service('entity_dependency_visualizer.dependency_stack');
+    $this->dependency_stack = $dependency_stack;
+    $this->entityTypeManager = $entity_type_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('entity_type.manager'),
+      $container->get('entity_dependency_visualizer.dependency_stack')
+    );
   }
 
   /**
@@ -62,36 +90,35 @@ class DependenciesCalculatorAbstract extends ControllerBase {
    * @inheritDoc
    */
   public function getTitle() {
-    return $this->t('Content Dependencies Graph');
+    return $this->t('Entity Dependencies');
   }
 
   /**
    * @inheritDoc
    */
   public function getUserGraph(UserInterface $user) {
-    // @todo inject this
-    return $this->getGraph(\Drupal::entityTypeManager()->getStorage('node')->load($user->id()));
+    return $this->getGraph($this->entityTypeManager->getStorage('node')->load($user->id()));
   }
 
   /**
    * @inheritDoc
    */
   public function getNodeGraph(NodeInterface $node) {
-    return $this->getGraph(\Drupal::entityTypeManager()->getStorage('node')->load($node->id()));
+    return $this->getGraph($this->entityTypeManager->getStorage('node')->load($node->id()));
   }
 
   /**
    * @inheritDoc
    */
   public function getTaxonomytermGraph(TermInterface $taxonomy_term) {
-    return $this->getGraph(\Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($taxonomy_term->id()));
+    return $this->getGraph($this->entityTypeManager->getStorage('taxonomy_term')->load($taxonomy_term->id()));
   }
 
   /**
    * @inheritDoc
    */
   public function getGraph(EntityInterface $entity) {
-    //@todo some of this function should be in Graphviz.php
+    //@todo some of these functions should be in Graphviz.php
     $this->getEntityDependencies($entity);
 
     $graphviz = new Graphviz($this->getDependencyStack()->getDependencies());
@@ -100,7 +127,7 @@ class DependenciesCalculatorAbstract extends ControllerBase {
 
     if ($this->configuration->get('show_graphviz_object')) {
       $build['graphviz_object'] = [
-        '#title' => 'http://www.webgraphviz.com object', //@todo add link here
+        '#title' => 'http://www.webgraphviz.com object', // @todo add link here
         '#type' => 'textarea',
         '#rows' => 4,
         '#cols' => 60,
@@ -230,8 +257,7 @@ class DependenciesCalculatorAbstract extends ControllerBase {
         break;
 
       default:
-        //@todo this->t()
-        $bundle = t('Unknown');
+        $bundle = $this->t('Unknown');
     }
 
     return $bundle;

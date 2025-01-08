@@ -5,6 +5,8 @@ namespace Drupal\entity_dependency_visualizer\Form;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Cache\Cache;
+use Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator\DependenciesCalculatorManager;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Settings form for Entity Dependency Visualizer.
@@ -12,6 +14,32 @@ use Drupal\Core\Cache\Cache;
  * @package Drupal\entity_dependency_visualizer\Form
  */
 class ConfigForm extends ConfigFormBase {
+
+  /**
+   * Plugin manager.
+   * 
+   * @var \Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator\DependenciesCalculatorManager
+   */
+  protected $pluginManager;
+
+  /**
+   * Config form constructor.
+   *
+   * @param \Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator\DependenciesCalculatorManager $plugin_manager
+   *   The plugin manager.
+   */
+  public function __construct(DependenciesCalculatorManager $plugin_manager) {
+    $this->pluginManager = $plugin_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('plugin.manager.entity_dependency_visualizer'),
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -31,13 +59,11 @@ class ConfigForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    //@todo make colours configurable
+    //@todo: Make colours configurable.
     $config = $this->config('entity_dependency_visualizer.settings');
 
-    // @todo: Use dependency injection.
-    $plugin_manager = \Drupal::service('plugin.manager.entity_dependency_visualizer');
     $options = [];
-    foreach ($plugin_manager->getDefinitions() as $id => $item) {
+    foreach ($this->pluginManager->getDefinitions() as $id => $item) {
       // @todo only show the option if module exists i.e. depcalc
       $options[$id] = $item['name'];
     }
@@ -63,7 +89,7 @@ class ConfigForm extends ConfigFormBase {
       '#description' => $this->t('Ellipsis will be used to shorten the name of entities.'),
     ];
 
-    // @todo show only for native calculator
+    // @todo: Show only for native calculator or make this work with Depcalc.
     $form['ignore_fields'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Ignore fields'),
@@ -79,7 +105,7 @@ class ConfigForm extends ConfigFormBase {
 
     $graph = $config->get('graph');
 
-    // See https://graphviz.org/docs/attrs/size/
+    // @see https://graphviz.org/docs/attrs/size/.
     $form['graph']['graph_size'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Graph size'),
@@ -89,7 +115,7 @@ class ConfigForm extends ConfigFormBase {
       '#description' => $this->t('Graph size'),
     ];
 
-    // See https://graphviz.org/docs/attrs/ratio/
+    // @see https://graphviz.org/docs/attrs/ratio/.
     $form['graph']['graph_ratio'] = [
       '#type' => 'select',
       '#options' => $this->getOptions(['fill', 'compress', 'expand', 'auto']),
@@ -97,7 +123,7 @@ class ConfigForm extends ConfigFormBase {
       '#default_value' => $graph['ratio'],
     ];
 
-    // See https://graphviz.org/docs/attrs/rankdir/
+    // @see https://graphviz.org/docs/attrs/rankdir/.
     $form['graph']['graph_rankdir'] = [
       '#type' => 'select',
       '#options' => $this->getOptions(['TB', 'RL', 'LR']),
@@ -156,7 +182,7 @@ class ConfigForm extends ConfigFormBase {
       '#collapsed' => TRUE,
     ];
 
-    // See https://graphviz.org/docs/attrs/style/
+    // @see https://graphviz.org/docs/attrs/style/.
     $form['graph']['graph']['graph_style'] = [
       '#type' => 'select',
       '#options' => $this->getOptions(['filled', 'invis']),
@@ -181,7 +207,7 @@ class ConfigForm extends ConfigFormBase {
       '#description' => '',
     ];
 
-    // See https://graphviz.org/docs/attr-types/style/
+    // @see https://graphviz.org/docs/attr-types/style/.
     $form['graph']['graph']['graph_fontstyle'] = [
       '#type' => 'select',
       '#options' => $this->getOptions(['bold', 'invis', 'solid', 'dashed', 'dotted']),
@@ -189,7 +215,7 @@ class ConfigForm extends ConfigFormBase {
       '#default_value' => $graph['graph']['fontstyle'],
     ];
 
-    // See https://graphviz.org/docs/attrs/label/
+    // @see https://graphviz.org/docs/attrs/label/.
     $form['graph']['graph']['graph_label'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Label'),
@@ -213,7 +239,7 @@ class ConfigForm extends ConfigFormBase {
       '#collapsed' => TRUE,
     ];
 
-    // See https://graphviz.org/doc/info/shapes.html
+    // @see https://graphviz.org/doc/info/shapes.html.
     $form['graph']['node']['node_shape'] = [
       '#type' => 'select',
       '#options' => $this->getOptions(['box', 'polygon', 'ellipse', 'oval', 'circle', 'rect', 'rectangle', 'note']),

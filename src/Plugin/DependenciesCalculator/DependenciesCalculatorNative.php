@@ -31,7 +31,7 @@ class DependenciesCalculatorNative extends DependenciesCalculatorAbstract {
 
   /**
    * @var array List of supported entity types.
-   * @todo do we need this now that we have check in routing?
+   * @todo: Do we need this now that we have a check in routing?
    */
   protected $supported_entity_types = [
     'user',

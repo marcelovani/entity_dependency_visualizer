@@ -7,6 +7,7 @@ services:
 
   entity_dependency_visualizer.entity_dependencies_plugin:
     class: '\Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator\DependenciesCalculatorAbstract'
+    arguments: ['@entity_type.manager', '@entity_dependency_visualizer.dependency_stack']
 
   entity_dependency_visualizer.route_subscriber:
     class: Drupal\entity_dependency_visualizer\Routing\RouteSubscriber

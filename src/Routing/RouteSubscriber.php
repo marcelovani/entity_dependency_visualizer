@@ -47,7 +47,7 @@ class RouteSubscriber extends RouteSubscriberBase {
           $plugin_id = $config->get('dependency_calculator_plugin') ?? 'native';
           // Load plugin.
           if ($plugin = $plugin_manager->getDefinition($plugin_id)) {
-            // @todo only show the option if module exists i.e. depcalc. Also create a function for this, it is used on the config form too
+            // @todo: Only show the option if module exists i.e. depcalc. Also create a function for this, it is used on the config form too.
             // Check if the function exists in the controller.
             $class = $plugin['class'];
             $function = 'get' . ucwords(str_replace('_', '', $entity_type->id())) . 'Graph';
