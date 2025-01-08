@@ -30,7 +30,7 @@ class DependenciesCalculatorDepcalc extends DependenciesCalculatorAbstract {
    * @return array
    *   The list of UUIDs of dependencies (entities).
    */
-  protected function getEntityDependencies(EntityInterface $entity) {
+  public function populateDependencies(EntityInterface $entity) {
     $dependentEntityWrapper = new DependentEntityWrapper($entity);
     $stack = new DependencyStack();
     $stack->ignoreCache(true);

@@ -52,7 +52,7 @@ class DependenciesCalculatorNative extends DependenciesCalculatorAbstract {
    * @parm $depth
    *   The nesting depth.
    */
-  protected function getEntityDependencies(EntityInterface $entity, &$list = [], $depth = 0) {
+  public function populateDependencies(EntityInterface $entity, &$list = [], $depth = 0) {
     $uuid = $entity->uuid();
 
     // Prevent circular dependencies.
@@ -104,7 +104,7 @@ class DependenciesCalculatorNative extends DependenciesCalculatorAbstract {
         $depth++;
         foreach ($referenced_entities as $referenced_entity) {
           // Scan child items.
-          $this->getEntityDependencies($referenced_entity, $list, $depth);
+          $this->populateDependencies($referenced_entity, $list, $depth);
         }
       }
       $this->dependency_stack->addDependency($uuid, $list[$uuid]);

@@ -9,6 +9,8 @@ namespace Drupal\entity_dependency_visualizer\Plugin\DependenciesCalculator;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Url;
+use Drupal\Core\Link;
 use Drupal\entity_dependency_visualizer\DependencyStack;
 use Drupal\entity_dependency_visualizer\Controller\Graphviz;
 use Drupal\node\NodeInterface;
@@ -118,16 +120,27 @@ class DependenciesCalculatorAbstract extends ControllerBase {
    * @inheritDoc
    */
   public function getGraph(EntityInterface $entity) {
-    //@todo some of these functions should be in Graphviz.php
-    $this->getEntityDependencies($entity);
-
-    $graphviz = new Graphviz($this->getDependencyStack()->getDependencies());
-
+    $this->populateDependencies($entity);
+    $list = $this->getDependencyStack()->getDependencies();
+    $graphviz = new Graphviz($list);
     $data = $graphviz->getGraphViz();
 
     if ($this->configuration->get('show_graphviz_object')) {
+      $url = 'http://www.webgraphviz.com';
+      $link = Link::fromTextAndUrl(
+        $this->t('Try on %url (opens in a new window)', ['%url' => $url]),
+        Url::fromUri(
+          $url,
+          array(
+            'attributes' => array(
+              'target' => '_blank'
+            )
+          )
+        )
+      )->toString();
+
       $build['graphviz_object'] = [
-        '#title' => 'http://www.webgraphviz.com object', // @todo add link here
+        '#title' => $link,
         '#type' => 'textarea',
         '#rows' => 4,
         '#cols' => 60,
