@@ -6,3 +6,4 @@ package: Content
 configure: entity_dependency_visualizer.settings
 dependencies:
   - depcalc:depcalc
+  - entity_dependency_visualizer:entity_dependency_visualizer
