@@ -54,15 +54,14 @@ class Graphviz extends ControllerBase {
    *    The array of dependencies;
    */
   public function __construct($list) {
-    // @todo show config options on the top of graphviz on entities
+    // @todo: Show config options on the top of graphviz on entities.
     $this->configuration = $this->config('entity_dependency_visualizer.settings');
     $this->list = $list;
     $this->checkDepth();
   }
 
-  //@todo look at https://www.drupal.org/project/graphapi/ and https://www.drupal.org/project/field_tools and https://www.drupal.org/project/graphviz_filter
-  //@todo add module to https://graphviz.org/resources/ page
-
+  // @todo: Look at https://www.drupal.org/project/graphapi/ and https://www.drupal.org/project/field_tools and https://www.drupal.org/project/graphviz_filter.
+  // @todo: Add module to https://graphviz.org/resources/ page.
 
   /**
    * Gets the Graphviz object, see Graphviz http://www.webgraphviz.com
@@ -83,8 +82,10 @@ class Graphviz extends ControllerBase {
     $definitions = $this->getDefinitions();
     $this->initGraph($definitions);
 
-    $i = 0;
-    // Load list.
+    $i = 1;
+    $order = 1;
+
+    // Loop list.
     foreach ($this->list as $from => $item) {
       // Limit depth.
       if ($item['info']['depth'] > $this->max_depth) {
@@ -98,15 +99,25 @@ class Graphviz extends ControllerBase {
       if (empty($item['children'])) {
         continue;
       }
+
+      // Used to make sure that we only increment $order when at least one item is added to the graph_obj.
+      $all_skipped = TRUE;
       foreach ($item['children'] as $child_item) {
+        if (empty($this->list[$child_item])) {
+          continue;
+        }
+
+        $all_skipped = FALSE;
+        $this->list[$child_item]['info']['order'] = $order;
+
         $i++;
         $label = $this->getArrowLabel($child_item, $i);
 
-        // @todo check why we have items without order coming from depcalc?
-        if (isset($this->list[$child_item]['info']['order'])) {
-          // Add node row.
-          $this->graph_obj .= "\"$from\" -> \"$child_item\" [label=\"$label\"];" . PHP_EOL;
-        }
+        $this->graph_obj .= "\"$from\" -> \"$child_item\" [label=\"$label\"];" . PHP_EOL;
+      }
+
+      if ($all_skipped === FALSE) {
+        $order++;
       }
     }
 
@@ -217,7 +228,7 @@ class Graphviz extends ControllerBase {
     if (!empty($this->list[$item])) {
       // Display the order number.
       if ($this->configuration->get('graph.arrows.display_order')) {
-        $label .= 'order: #' . $this->list[$item]['info']['order'] . '\n';
+        $label .= '#' . $this->list[$item]['info']['order'] . '\n';
       }
 
       // Display the node type.

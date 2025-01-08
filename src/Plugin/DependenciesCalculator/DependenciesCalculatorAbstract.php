@@ -151,9 +151,14 @@ class DependenciesCalculatorAbstract extends ControllerBase {
    * @inheritDoc
    */
   public function getColor($entity) {
+    // @todo: Make these colors configurable.
     switch ($entity->getEntityTypeId()) {
       case 'user':
         $color = 'lightpink2';
+        break;
+
+      case 'file':
+        $color = 'blue';
         break;
 
       case 'node':

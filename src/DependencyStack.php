@@ -83,6 +83,18 @@ class DependencyStack {
    *   The dependencies.
    */
   public function getDependencies() {
+    // Sort array by id.
+    uasort($this->dependencies, function($a, $b) {
+      return $a['info']['id'] <=> $b['info']['id'];
+    });
+
+    // Sort children.
+    foreach ($this->dependencies as &$item) {
+      if (!empty($item['children'])) {
+        sort($item['children']);
+      }
+    }
+
     return $this->dependencies;
   }
 

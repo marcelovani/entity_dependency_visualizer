@@ -25,6 +25,8 @@ class DependenciesCalculatorNative extends DependenciesCalculatorAbstract {
   protected $supported_entity_reference_types = [
     'entity_reference',
     'entity_reference_revisions',
+    'image',
+    'file',
   ];
 
   /**
@@ -33,6 +35,8 @@ class DependenciesCalculatorNative extends DependenciesCalculatorAbstract {
    */
   protected $supported_entity_types = [
     'user',
+    'file',
+    'image',
     'node',
     'paragraph',
     'taxonomy_term',
@@ -49,9 +53,6 @@ class DependenciesCalculatorNative extends DependenciesCalculatorAbstract {
    *   The nesting depth.
    */
   protected function getEntityDependencies(EntityInterface $entity, &$list = [], $depth = 0) {
-    static $order;
-    $order++;
-
     $uuid = $entity->uuid();
 
     // Prevent circular dependencies.
@@ -59,17 +60,18 @@ class DependenciesCalculatorNative extends DependenciesCalculatorAbstract {
       return;
     }
 
-    $list[$uuid]['info'] = [
-      'id' => $entity->id(),
-      'type' => $entity->getEntityTypeId(),
-      'bundle' => $this->getEntityBundle($entity),
-      'label' => $this->getEntityLabel($entity),
-      'color' => $this->getColor($entity),
-      'url' => $this->getEntityUrl($entity),
-      'uuid' => $entity->uuid(),
-      'depth' => $depth,
-      'order' => $order,
-    ];
+    if (!isset($list[$uuid]['info'])) {
+      $list[$uuid]['info'] = [
+        'id' => $entity->id(),
+        'type' => $entity->getEntityTypeId(),
+        'bundle' => $this->getEntityBundle($entity),
+        'label' => $this->getEntityLabel($entity),
+        'color' => $this->getColor($entity),
+        'url' => $this->getEntityUrl($entity),
+        'uuid' => $entity->uuid(),
+        'depth' => $depth,
+      ];
+    }
     $this->dependency_stack->addDependency($uuid, $list[$uuid]);
 
     // Get children.
@@ -86,13 +88,18 @@ class DependenciesCalculatorNative extends DependenciesCalculatorAbstract {
         continue;
       }
 
-      $list[$uuid]['info']['field'] = $field_name;
+      $list[$uuid]['info']['field'] ??= $field_name;
+      $list[$uuid]['children'] ??= [];
 
       if ($referenced_entities = $this->getReferencedEntities($entity, $field_definition)) {
-        // Loop over the sections and get all pages.
+        // Loop over the entities and get all pages.
         foreach ($referenced_entities as $referenced_entity) {
-          // Add section to parent list.
-          $list[$uuid]['children'][] = $referenced_entity->uuid();
+          // Add child items to parent list.
+          $child_uuid = $referenced_entity->uuid();
+          // Reduce duplication.
+          if (!in_array($child_uuid, $list[$uuid]['children'])) {
+            $list[$uuid]['children'][] = $child_uuid;
+          }   
         }
         $depth++;
         foreach ($referenced_entities as $referenced_entity) {
