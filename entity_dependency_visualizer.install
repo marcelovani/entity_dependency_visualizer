@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the Upgrade Status module.
+ */
+
+ use Drupal\Component\Serialization\Yaml;
+
+/**
+ * Re-import config..
+ */
+function entity_dependency_visualizer_update_8101() {
+    $config = 'entity_dependency_visualizer.settings';
+    $file = \Drupal::service('extension.list.module')->getPath('entity_dependency_visualizer');
+    $file .= '/config/install/' . $config . '.yml';
+    $content = file_get_contents($file);
+    $parsed_yml = Yaml::decode($content);
+
+    $active_storage = \Drupal::service('config.storage');
+    $active_storage->write($config, $parsed_yml);
+}
